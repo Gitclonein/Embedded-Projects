@@ -28,7 +28,7 @@ I love turning ideas into **working prototypes**, not just code.
 💼 Currently    → Building IoT & AI-based Automation Systems
 🎓 Learning     → Advanced Embedded Systems + Edge AI
 💬 Ask me about → ESP32, IoT, Sensors, PCB Design, AI Integration
-📫 Reach me at  → your@email.com
+📫 Reach me at  → vedantpathrabe31@gmail.com
 ```
 
 ---
