@@ -43,25 +43,11 @@ Designed and developed a **voice-controlled autonomous robot** using AI and embe
 
 * 🎤 Voice recognition + command execution
 * 🧠 AI-based interaction system
-* 📡 Wireless communication using ESP32
+* 📡 Wireless communication using Arduino
 * 🔧 Real-time environment response
 
 **Tech Stack:**
-`ESP32` `Python` `Speech Recognition` `Embedded C` `IoT`
-
-
----
-
-### 🌍 Global Air Quality Monitoring System
-
-> Real-time environmental monitoring with global access
-
-* 🌫️ Monitors AQI, temperature, humidity
-* ☁️ Cloud dashboard for global visualization
-* 📊 Data logging + analytics
-
-**Tech Stack:**
-`ESP8266` `DHT22` `MQTT` `ThingsBoard` `Web Dashboard`
+`Arduino` `Python` `Speech Recognition` `Embedded C` `IoT`
 
 ---
 
@@ -73,21 +59,34 @@ Designed and developed a **voice-controlled autonomous robot** using AI and embe
 * 📡 Wi-Fi-based sensor data transmission
 * 🔧 Lightweight embedded web server
 
-**Tech Stack:**
+**Tech Stack:**  
 `ESP8266` `DHT22` `HTML` `CSS` `Embedded C`
 
 ---
 
-### 🔋 Smart Power Supply & PCB Design Project
+### 🌞 Solar Tracking System using Arduino
 
-> Custom-designed power electronics system
+> Intelligent solar panel alignment for maximum energy efficiency
 
-* ⚡ Designed regulated power supply
-* 🧩 Created schematic + PCB in EasyEDA
-* 🔍 Focus on efficiency and reliability
+* ☀️ Developed dual-axis solar tracker using LDR sensors and servo motors
+* 🎯 Implemented ADC-based sensor acquisition and PWM-controlled servo positioning
+* ⚡ Optimized tracking algorithm and sampling rate for improved sunlight detection accuracy
 
-**Tech Stack:**
-`EasyEDA` `Power Electronics` `PCB Design`
+**Tech Stack:**  
+`Arduino` `LDR Sensors` `Servo Motor` `Embedded C` `PWM Control`
+
+---
+
+### 📱 Cell Phone Detector with Custom PCB
+
+> RF signal detection system with custom-designed PCB
+
+* 📡 Designed and fabricated custom PCB for mobile signal detection
+* 🔔 Implemented op-amp based RF detection circuit with buzzer and LED alert system
+* 🛠️ Performed hardware testing and sensitivity optimization for reliable detection
+
+**Tech Stack:**  
+`PCB Design` `EasyEDA` `Op-Amp Circuits` `RF Detection` `Electronics Hardware`
 
 ---
 
@@ -97,7 +96,6 @@ Designed and developed a **voice-controlled autonomous robot** using AI and embe
 
 ![ESP32](https://img.shields.io/badge/ESP32-FF6F00?style=for-the-badge)
 ![ESP8266](https://img.shields.io/badge/ESP8266-000000?style=for-the-badge)
-![STM32](https://img.shields.io/badge/STM32-03234B?style=for-the-badge)
 ![Embedded C](https://img.shields.io/badge/Embedded_C-6A1B9A?style=for-the-badge)
 
 ### 🌐 IoT & Communication
