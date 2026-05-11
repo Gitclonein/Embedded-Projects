@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>VOCIBOT</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --bg:#060c18; --surf:#0b1628; --card:#0d1e38;
+  --acc:#00d4ff; --acc2:#7c2fff;
+  --grn:#00ff88; --red:#ff3a5c; --ylw:#ffd600;
+  --txt:#c8dff5; --dim:#496680;
+  --glo:0 0 16px rgba(0,212,255,.3);
+  --gl2:0 0 16px rgba(124,47,255,.3);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--txt);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.01) 2px,rgba(0,212,255,.01) 4px)}
+
+/* ── HEADER ── */
+header{
+  background:linear-gradient(135deg,var(--surf),#07101f);
+  border-bottom:2px solid var(--acc);padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;box-shadow:0 4px 24px rgba(0,212,255,.15)
+}
+.logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.4rem;
+  background:linear-gradient(90deg,var(--acc),var(--acc2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+.sub{font-size:.55rem;color:var(--dim);letter-spacing:1.5px;margin-top:1px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--red);box-shadow:0 0 6px var(--red);margin-right:5px;animation:blink 2s infinite}
+.dot.on{background:var(--grn);box-shadow:0 0 6px var(--grn)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--surf);border-bottom:1px solid rgba(0,212,255,.12);
+  position:sticky;top:62px;z-index:100}
+.tab{flex:1;padding:10px 2px;text-align:center;font-family:'Orbitron',sans-serif;
+  font-size:.55rem;letter-spacing:.8px;color:var(--dim);cursor:pointer;
+  border-bottom:3px solid transparent;transition:all .25s;user-select:none}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+
+/* ── PANELS ── */
+.pnl{display:none;padding:12px}
+.pnl.on{display:block}
+
+/* ── SENSOR BAR ── */
+.sbar{display:flex;justify-content:space-around;background:var(--card);
+  border:1px solid rgba(0,212,255,.12);border-radius:10px;
+  padding:10px 8px;margin-bottom:11px;gap:4px}
+.si{text-align:center;min-width:0}
+.sl{font-size:.55rem;color:var(--dim);letter-spacing:.8px;margin-bottom:2px}
+.sv{font-family:'Orbitron',sans-serif;font-size:.9rem;font-weight:700;color:var(--acc)}
+.sv.warn{color:var(--red)}.sv.ok{color:var(--grn)}
+
+/* ── CAMERA PANEL ── */
+.cam-wrap{
+  width:100%;aspect-ratio:4/3;background:#000;
+  border-radius:12px;overflow:hidden;
+  border:1px solid rgba(0,212,255,.2);
+  position:relative;margin-bottom:10px
+}
+#camImg{width:100%;height:100%;object-fit:cover;display:none}
+.cam-placeholder{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:100%;height:100%;gap:10px;color:var(--dim)
+}
+.cam-placeholder .icon{font-size:2.5rem}
+.cam-overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:6px 10px;font-size:.65rem;
+  background:linear-gradient(transparent,rgba(0,0,0,.7));
+  display:flex;justify-content:space-between;align-items:center
+}
+.cam-badge{
+  padding:3px 8px;border-radius:4px;font-size:.58rem;
+  font-family:'Orbitron',sans-serif;letter-spacing:1px
+}
+.cam-badge.live{background:var(--red);color:#fff;animation:blink .8s infinite}
+.cam-badge.off{background:rgba(255,255,255,.1);color:var(--dim)}
+
+.cam-controls{display:flex;gap:8px;margin-bottom:10px}
+.cam-ip{flex:1;padding:10px 12px;background:var(--surf);
+  border:1px solid rgba(0,212,255,.2);border-radius:8px;
+  color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.85rem;outline:none}
+.cam-ip:focus{border-color:var(--acc);box-shadow:var(--glo)}
+.cmbtn{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;
+  font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:1px;
+  font-weight:700;transition:all .2s;white-space:nowrap}
+.cmbtn-pri{background:linear-gradient(135deg,var(--acc),#009bbb);color:#000}
+.cmbtn-sec{background:rgba(0,212,255,.1);border:1px solid var(--acc);color:var(--acc)}
+.cmbtn:active{transform:scale(.96)}
+
+/* ── OBSTACLE WARNING ── */
+.obs{display:none;background:rgba(255,58,92,.1);border:1px solid var(--red);
+  border-radius:8px;padding:8px 12px;text-align:center;
+  color:var(--red);font-size:.75rem;margin-bottom:10px}
+.obs.on{display:block}
+
+/* ── DPAD ── */
+.dpad{display:flex;flex-direction:column;align-items:center;gap:7px;margin:14px 0}
+.drow{display:flex;gap:7px}
+.db{
+  width:74px;height:74px;border-radius:12px;
+  border:2px solid rgba(0,212,255,.25);background:var(--card);
+  color:var(--acc);font-size:1.6rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;user-select:none;-webkit-user-select:none
+}
+.db:active,.db.pr{background:rgba(0,212,255,.18);border-color:var(--acc);
+  transform:scale(.93);box-shadow:var(--glo)}
+.db-s{background:rgba(255,58,92,.1);border-color:var(--red);color:var(--red);
+  font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:1px}
+.db-s:active{background:rgba(255,58,92,.25);box-shadow:0 0 16px rgba(255,58,92,.35)}
+.ph{width:74px;height:74px}
+
+/* ── SPEED ── */
+.srow{display:flex;gap:7px;justify-content:center;margin-top:4px}
+.spd{flex:1;max-width:96px;padding:9px 4px;border-radius:8px;
+  border:1px solid rgba(0,212,255,.18);background:var(--card);
+  color:var(--dim);font-family:'Orbitron',sans-serif;font-size:.56rem;
+  letter-spacing:.8px;cursor:pointer;text-align:center;transition:all .2s}
+.spd.on{border-color:var(--ylw);color:var(--ylw);background:rgba(255,214,0,.08)}
+
+/* ── MIC BUTTON ── */
+.mic-sec{display:flex;flex-direction:column;align-items:center;gap:10px;margin:14px 0}
+.mic-btn{
+  width:90px;height:90px;border-radius:50%;cursor:pointer;
+  border:3px solid var(--acc2);
+  background:radial-gradient(circle,rgba(124,47,255,.25),var(--card));
+  color:var(--acc2);font-size:2.2rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .3s;box-shadow:0 0 24px rgba(124,47,255,.2)
+}
+.mic-btn.on{
+  border-color:var(--red);color:var(--red);
+  background:radial-gradient(circle,rgba(255,58,92,.25),var(--card));
+  animation:mpulse 1s infinite;box-shadow:0 0 34px rgba(255,58,92,.35)
+}
+@keyframes mpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.mic-st{font-size:.7rem;color:var(--dim);text-align:center}
+.mic-tx{
+  font-size:.78rem;color:var(--txt);text-align:center;font-style:italic;
+  background:var(--card);border:1px solid rgba(0,212,255,.12);
+  border-radius:8px;padding:9px 12px;width:100%;min-height:38px
+}
+
+/* ── GREETING GRID ── */
+.gg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+.gb{padding:11px 7px;background:var(--card);border:1px solid rgba(0,212,255,.15);
+  border-radius:10px;color:var(--txt);font-family:'Share Tech Mono',monospace;
+  font-size:.75rem;cursor:pointer;text-align:center;transition:all .2s}
+.gb:active{border-color:var(--acc);background:rgba(0,212,255,.1);color:var(--acc)}
+.gi{font-size:1.2rem;display:block;margin-bottom:2px}
+.gresp{background:var(--surf);border:1px solid rgba(124,47,255,.18);
+  border-radius:8px;padding:10px;font-size:.8rem;min-height:42px;
+  color:var(--txt);display:none;line-height:1.6}
+
+/* ── CHAT ── */
+.chatbox{background:var(--card);border:1px solid rgba(124,47,255,.2);
+  border-radius:12px;height:310px;overflow-y:auto;padding:12px;
+  margin-bottom:10px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}
+.chatbox::-webkit-scrollbar{width:3px}
+.chatbox::-webkit-scrollbar-thumb{background:rgba(124,47,255,.3);border-radius:2px}
+.msg{max-width:87%;padding:8px 12px;border-radius:11px;font-size:.79rem;line-height:1.5;animation:fi .3s}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mu{align-self:flex-end;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);border-bottom-right-radius:3px}
+.mb{align-self:flex-start;background:rgba(124,47,255,.13);border:1px solid rgba(124,47,255,.25);border-bottom-left-radius:3px}
+.mb .lbl{font-size:.56rem;color:var(--acc2);letter-spacing:.8px;margin-bottom:2px;font-family:'Orbitron',sans-serif}
+.msys{align-self:center;max-width:100%;background:rgba(255,214,0,.08);
+  border:1px solid rgba(255,214,0,.15);color:var(--ylw);font-size:.68rem;text-align:center;border-radius:8px}
+.tdots{display:flex;gap:4px;align-items:center;align-self:flex-start;
+  padding:8px 12px;background:rgba(124,47,255,.13);border:1px solid rgba(124,47,255,.25);
+  border-radius:11px;border-bottom-left-radius:3px}
+.td{width:5px;height:5px;background:var(--acc2);border-radius:50%;animation:td .9s infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+
+.crow{display:flex;gap:7px;align-items:flex-end}
+.cin{flex:1;padding:10px 12px;background:var(--surf);
+  border:1px solid rgba(124,47,255,.25);border-radius:9px;
+  color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.84rem;
+  resize:none;min-height:40px;max-height:90px;outline:none;transition:border-color .3s}
+.cin:focus{border-color:var(--acc2);box-shadow:var(--gl2)}
+.csnd{width:40px;height:40px;border:none;border-radius:9px;flex-shrink:0;cursor:pointer;
+  background:linear-gradient(135deg,var(--acc2),#5000cc);color:#fff;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;transition:all .2s}
+.csnd:active{transform:scale(.93)}
+
+.qwrp{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.qp{padding:5px 10px;background:var(--surf);border:1px solid rgba(124,47,255,.2);
+  border-radius:16px;font-size:.68rem;color:var(--dim);cursor:pointer;transition:all .2s}
+.qp:active{border-color:var(--acc2);color:var(--acc2)}
+
+/* ── SETUP ── */
+.card{background:var(--card);border:1px solid rgba(0,212,255,.13);
+  border-radius:12px;padding:14px;margin-bottom:12px}
+.ctit{font-family:'Orbitron',sans-serif;font-size:.62rem;color:var(--acc);
+  letter-spacing:1.8px;margin-bottom:10px;text-transform:uppercase}
+input[type=text]{
+  width:100%;padding:10px 12px;background:var(--surf);
+  border:1px solid rgba(0,212,255,.18);border-radius:8px;
+  color:var(--txt);font-family:'Share Tech Mono',monospace;font-size:.86rem;
+  margin-bottom:8px;outline:none;transition:border-color .3s}
+input[type=text]:focus{border-color:var(--acc);box-shadow:var(--glo)}
+.btn{width:100%;padding:12px;border:none;border-radius:8px;
+  font-family:'Orbitron',sans-serif;font-size:.67rem;letter-spacing:1.5px;
+  font-weight:700;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn+.btn{margin-top:7px}
+.bp{background:linear-gradient(135deg,var(--acc),#009bbb);color:#000;box-shadow:0 4px 16px rgba(0,212,255,.25)}
+.bs{background:rgba(0,212,255,.08);border:1px solid var(--acc);color:var(--acc)}
+.ba{background:linear-gradient(135deg,var(--acc2),#5000cc);color:#fff;box-shadow:0 4px 16px rgba(124,47,255,.25)}
+.bd{background:rgba(255,58,92,.1);border:1px solid var(--red);color:var(--red)}
+.btn:active{transform:scale(.97)}
+.krow{display:flex;gap:7px}
+.krow input{flex:1;margin-bottom:0}
+.kbtn{padding:0 12px;border:none;border-radius:8px;
+  background:linear-gradient(135deg,var(--acc2),#5000cc);
+  color:#fff;font-size:.6rem;font-family:'Orbitron',sans-serif;
+  letter-spacing:1px;cursor:pointer;white-space:nowrap}
+
+/* ── WIRING TABLE ── */
+.wtbl{width:100%;border-collapse:collapse;font-size:.73rem}
+.wtbl th{background:rgba(0,212,255,.08);color:var(--acc);
+  padding:6px 9px;text-align:left;font-family:'Orbitron',sans-serif;font-size:.57rem;letter-spacing:.8px}
+.wtbl td{padding:6px 9px;border-bottom:1px solid rgba(0,212,255,.07)}
+.wtbl tr:last-child td{border:none}
+.wtbl tr:nth-child(even) td{background:rgba(0,212,255,.02)}
+.pin{color:var(--acc);font-weight:700}
+
+/* ── LOG ── */
+.logbox{background:#020810;border:1px solid rgba(0,212,255,.1);
+  border-radius:9px;padding:10px;height:160px;overflow-y:auto;
+  font-size:.68rem;color:var(--dim);line-height:1.65}
+.lok{color:var(--grn)}.lerr{color:var(--red)}.lai{color:var(--acc2)}.lent{color:var(--txt)}
+
+/* ── VOICE CMDS ── */
+.vcg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.vc{padding:7px;background:var(--surf);border-radius:6px;
+  border:1px solid rgba(0,212,255,.1);font-size:.73rem}
+.vc span{color:var(--acc)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  background:var(--card);border:1px solid var(--acc);border-radius:9px;
+  padding:8px 16px;font-size:.76rem;color:var(--acc);z-index:10000;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div>
+    <div class="logo">VOCIBOT</div>
+    <div class="sub">PBCOE NAGPUR · AI VOICE ROBOT</div>
+  </div>
+  <div style="text-align:right">
+    <div><span class="dot" id="dot"></span><span style="font-size:.7rem;color:var(--dim)" id="connLbl">DISCONNECTED</span></div>
+    <div style="font-size:.58rem;color:var(--dim);margin-top:2px" id="btLbl">HC-05: ---</div>
+  </div>
+</header>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <div class="tab on" onclick="tab('cam',this)">📷 CAMERA</div>
+  <div class="tab" onclick="tab('ctrl',this)">🎮 DRIVE</div>
+  <div class="tab" onclick="tab('voice',this)">🎙️ VOICE</div>
+  <div class="tab" onclick="tab('ai',this)">🤖 AI</div>
+  <div class="tab" onclick="tab('setup',this)">⚙️ SETUP</div>
+</div>
+
+<!-- ═══════ CAMERA ═══════ -->
+<div class="pnl on" id="p-cam">
+  <div class="cam-controls">
+    <input class="cam-ip" id="camIp" type="text" placeholder="192.168.x.x (ESP32-CAM IP)">
+    <button class="cmbtn cmbtn-pri" onclick="connectCam()">▶ CONNECT</button>
+    <button class="cmbtn cmbtn-sec" onclick="snapshot()">📷</button>
+  </div>
+
+  <div class="cam-wrap">
+    <div class="cam-placeholder" id="camPH">
+      <div class="icon">📷</div>
+      <div style="font-size:.75rem;color:var(--dim)">Enter ESP32-CAM IP above</div>
+      <div style="font-size:.65rem;color:var(--dim);margin-top:4px">Stream appears here</div>
+    </div>
+    <img id="camImg" alt="VOCIBOT camera feed" onerror="camError()">
+    <div class="cam-overlay">
+      <span class="cam-badge off" id="camBadge">OFFLINE</span>
+      <span style="font-size:.6rem;color:rgba(255,255,255,.5)" id="camInfo">No signal</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:7px;margin-bottom:10px">
+    <button class="cmbtn cmbtn-sec" style="flex:1" onclick="disconnectCam()">■ STOP STREAM</button>
+    <button class="cmbtn cmbtn-sec" style="flex:1" onclick="snapshot()">💾 SNAPSHOT</button>
+    <button class="cmbtn cmbtn-sec" style="flex:1" onclick="pingCam()">🔍 PING</button>
+  </div>
+
+  <div class="card">
+    <div class="ctit">ESP32-CAM STATUS</div>
+    <div class="sbar" style="margin:0">
+      <div class="si"><div class="sl">CAMERA</div><div class="sv" id="camSt">OFFLINE</div></div>
+      <div class="si"><div class="sl">STREAM</div><div class="sv" id="strSt">---</div></div>
+      <div class="si"><div class="sl">QUALITY</div><div class="sv">VGA</div></div>
+      <div class="si"><div class="sl">FPS</div><div class="sv" id="fpsSt">0</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ DRIVE ═══════ -->
+<div class="pnl" id="p-ctrl">
+  <div class="sbar">
+    <div class="si"><div class="sl">DIST</div><div class="sv" id="siDist">-- cm</div></div>
+    <div class="si"><div class="sl">PATH</div><div class="sv ok" id="siPath">CLEAR</div></div>
+    <div class="si"><div class="sl">SPD</div><div class="sv" id="siSpd">MED</div></div>
+    <div class="si"><div class="sl">BT</div><div class="sv" id="siBt">OFF</div></div>
+    <div class="si"><div class="sl">CAM</div><div class="sv" id="siCam">OFF</div></div>
+  </div>
+
+  <div class="obs" id="obs">⚠️ OBSTACLE — FORWARD BLOCKED</div>
+
+  <div class="dpad">
+    <div class="drow">
+      <div class="ph"></div>
+      <button class="db" id="bF" onpointerdown="hld('F')" onpointerup="rel()" onpointerleave="rel()">▲</button>
+      <div class="ph"></div>
+    </div>
+    <div class="drow">
+      <button class="db" id="bL" onpointerdown="hld('L')" onpointerup="rel()" onpointerleave="rel()">◀</button>
+      <button class="db db-s" id="bS" onclick="send('S')">STOP</button>
+      <button class="db" id="bR" onpointerdown="hld('R')" onpointerup="rel()" onpointerleave="rel()">▶</button>
+    </div>
+    <div class="drow">
+      <div class="ph"></div>
+      <button class="db" id="bB" onpointerdown="hld('B')" onpointerup="rel()" onpointerleave="rel()">▼</button>
+      <div class="ph"></div>
+    </div>
+  </div>
+
+  <div class="srow" id="spdRow">
+    <button class="spd" onclick="setSpd('1','SLOW',this)">SLOW</button>
+    <button class="spd on" onclick="setSpd('2','MED',this)">MEDIUM</button>
+    <button class="spd" onclick="setSpd('3','FAST',this)">FAST</button>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="ctit">COMMAND LOG</div>
+    <div class="logbox" id="logbox"><span class="lok">[VOCIBOT] Ready — go to SETUP to connect.</span><br></div>
+  </div>
+</div>
+
+<!-- ═══════ VOICE ═══════ -->
+<div class="pnl" id="p-voice">
+  <div class="card">
+    <div class="ctit">VOICE CONTROL — NEAR-SPEAKER MODE</div>
+    <div style="font-size:.73rem;color:var(--dim);margin-bottom:12px;line-height:1.7">
+      Speak close to your phone. Voice commands move the robot.<br>
+      Any question → automatically sent to Gemini AI → answer spoken aloud.
+    </div>
+    <div class="mic-sec">
+      <button class="mic-btn" id="micBtn" onclick="toggleVoice()">🎤</button>
+      <div class="mic-st" id="micSt">Tap mic — speak near your phone</div>
+      <div class="mic-tx" id="micTx">Recognized speech appears here...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctit">QUICK GREETINGS</div>
+    <div class="gg">
+      <button class="gb" onclick="greet('H')"><span class="gi">👋</span>Hello</button>
+      <button class="gb" onclick="greet('G')"><span class="gi">🌅</span>Good Morning</button>
+      <button class="gb" onclick="greet('A')"><span class="gi">☀️</span>Good Afternoon</button>
+      <button class="gb" onclick="greet('E')"><span class="gi">🌆</span>Good Evening</button>
+      <button class="gb" onclick="greet('K')"><span class="gi">🌙</span>Good Night</button>
+      <button class="gb" onclick="greet('N')"><span class="gi">🤖</span>Your Name?</button>
+      <button class="gb" onclick="greet('I')"><span class="gi">📢</span>Introduce</button>
+      <button class="gb" onclick="greet('W')"><span class="gi">💚</span>How Are You?</button>
+    </div>
+    <div class="gresp" id="gresp"></div>
+  </div>
+
+  <div class="card">
+    <div class="ctit">VOICE COMMANDS</div>
+    <div class="vcg">
+      <div class="vc"><span>"Forward"</span> → Move forward</div>
+      <div class="vc"><span>"Back"</span> → Move backward</div>
+      <div class="vc"><span>"Left"</span> → Turn left</div>
+      <div class="vc"><span>"Right"</span> → Turn right</div>
+      <div class="vc"><span>"Stop"</span> → Stop motors</div>
+      <div class="vc"><span>"Slow/Fast"</span> → Speed</div>
+      <div class="vc"><span>"Hello"</span> → VOCIBOT greets</div>
+      <div class="vc"><span>"Your name"</span> → Identity</div>
+      <div class="vc"><span>"Good morning"</span> → Greeting</div>
+      <div class="vc"><span>"How are you"</span> → Status</div>
+      <div class="vc"><span>"Introduce"</span> → Full intro</div>
+      <div class="vc"><span>Any question</span> → Gemini AI</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ AI CHAT ═══════ -->
+<div class="pnl" id="p-ai">
+  <div class="qwrp">
+    <span class="qp" onclick="qa('What is your name?')">Your name?</span>
+    <span class="qp" onclick="qa('Who made you?')">Who made you?</span>
+    <span class="qp" onclick="qa('What can you do?')">Capabilities?</span>
+    <span class="qp" onclick="qa('How are you?')">How are you?</span>
+    <span class="qp" onclick="qa('Explain how you work')">How you work?</span>
+    <span class="qp" onclick="qa('What is Arduino Uno?')">Arduino?</span>
+    <span class="qp" onclick="qa('What is Bluetooth HC-05?')">HC-05?</span>
+    <span class="qp" onclick="qa('Who is your guide?')">Your guide?</span>
+    <span class="qp" onclick="qa('Tell me a joke')">Tell a joke 😄</span>
+    <span class="qp" onclick="qa('What is ESP32-CAM?')">ESP32-CAM?</span>
+  </div>
+
+  <div class="chatbox" id="chatbox">
+    <div class="msg mb">
+      <div class="lbl">⬡ VOCIBOT</div>
+      Hello! I am VOCIBOT — Voice Controlled Intelligent Bot! Built at Priyadarshini Bhagwati College of Engineering, Nagpur. Add your Gemini key in ⚙️ Setup for full AI! 🤖
+    </div>
+    <div class="msg msys">Speak near your phone — voice goes to AI automatically!</div>
+  </div>
+
+  <div class="crow">
+    <textarea class="cin" id="cin" placeholder="Ask VOCIBOT anything..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    <button class="csnd" onclick="sendAI()">➤</button>
+  </div>
+  <div style="display:flex;gap:7px;margin-top:7px">
+    <button class="btn bs" style="padding:9px;font-size:.6rem" onclick="v2ai()">🎤 Voice to AI</button>
+    <button class="btn bd" style="padding:9px;font-size:.6rem" onclick="clrChat()">🗑️ Clear</button>
+  </div>
+</div>
+
+<!-- ═══════ SETUP ═══════ -->
+<div class="pnl" id="p-setup">
+  <div class="card">
+    <div class="ctit">1 — GEMINI API KEY (FREE)</div>
+    <div style="font-size:.72rem;color:var(--dim);margin-bottom:10px;line-height:1.7">
+      Go to <span style="color:var(--acc)">aistudio.google.com</span> → "Get API Key" → copy & paste below.
+      Your key is saved in this browser only.
+    </div>
+    <div class="krow">
+      <input type="text" id="keyIn" placeholder="AIza...your-gemini-key">
+      <button class="kbtn" onclick="saveKey()">SAVE</button>
+    </div>
+    <div style="font-size:.66rem;color:var(--dim);margin-top:5px" id="keySt">No key saved</div>
+  </div>
+
+  <div class="card">
+    <div class="ctit">2 — BLUETOOTH (HC-05 → ARDUINO)</div>
+    <div style="font-size:.72rem;color:var(--dim);margin-bottom:10px;line-height:1.7">
+      Pair phone to <span style="color:var(--acc)">HC-05</span> in Android Bluetooth Settings (PIN: <span style="color:var(--acc)">1234</span>).
+      Then tap Connect below. Requires Chrome on Android.
+    </div>
+    <button class="btn bp" onclick="connBT()">⚡ CONNECT HC-05 BLUETOOTH</button>
+    <button class="btn bd" onclick="discBT()">■ DISCONNECT</button>
+  </div>
+
+  <div class="card">
+    <div class="ctit">3 — ESP32-CAM (LIVE VIDEO)</div>
+    <div style="font-size:.72rem;color:var(--dim);margin-bottom:10px;line-height:1.7">
+      Flash <span style="color:var(--acc)">VOCIBOT_ESP32CAM.ino</span> to your ESP32-CAM.
+      Note the IP from Serial Monitor, enter it in the 📷 Camera tab.
+    </div>
+    <button class="btn ba" onclick="tab('cam',document.querySelectorAll('.tab')[0])">📷 GO TO CAMERA TAB</button>
+  </div>
+
+  <div class="card">
+    <div class="ctit">WIRING — ARDUINO UNO</div>
+    <table class="wtbl">
+      <tr><th>Arduino</th><th>Component</th><th>Note</th></tr>
+      <tr><td class="pin">D2 IN1</td><td>L293D IN1</td><td>Left dir</td></tr>
+      <tr><td class="pin">D3 IN2</td><td>L293D IN2</td><td>Left dir</td></tr>
+      <tr><td class="pin">D4 IN3</td><td>L293D IN3</td><td>Right dir</td></tr>
+      <tr><td class="pin">D5 IN4</td><td>L293D IN4</td><td>Right dir</td></tr>
+      <tr><td class="pin">D6 ENA</td><td>L293D ENA</td><td>Left PWM</td></tr>
+      <tr><td class="pin">D9 ENB</td><td>L293D ENB</td><td>Right PWM</td></tr>
+      <tr><td class="pin">D10 TRIG</td><td>HC-SR04</td><td>Ultrasonic</td></tr>
+      <tr><td class="pin">D11 ECHO</td><td>HC-SR04</td><td>Ultrasonic</td></tr>
+      <tr><td class="pin">D7 RX</td><td>HC-05 TX</td><td>Divider 1k+2k</td></tr>
+      <tr><td class="pin">D8 TX</td><td>HC-05 RX</td><td>Direct</td></tr>
+      <tr><td class="pin">D12</td><td>Buzzer</td><td>Active buzzer</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ctit">SYSTEM INFO</div>
+    <div style="font-size:.76rem;line-height:2">
+      <div>🤖 <span style="color:var(--dim)">Robot:</span> VOCIBOT v2.0</div>
+      <div>🎓 <span style="color:var(--dim)">College:</span> Priyadarshini Bhagwati COE, Nagpur</div>
+      <div>👨‍🏫 <span style="color:var(--dim)">Guide:</span> Dr J.Y. Hande</div>
+      <div>👥 <span style="color:var(--dim)">Team:</span> Reshma · Vedant · Raksha · Lavanya · Mahak</div>
+      <div>📡 <span style="color:var(--dim)">BT:</span> HC-05 → Arduino Uno</div>
+      <div>📷 <span style="color:var(--dim)">Camera:</span> ESP32-CAM (independent)</div>
+      <div>🤖 <span style="color:var(--dim)">AI:</span> Gemini 1.5 Flash via browser</div>
+    </div>
+    <button class="btn bs" style="margin-top:10px;font-size:.6rem;padding:9px" onclick="send('V')">📋 VERSION</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════
+let btDev=null, btChar=null, btOn=false;
+let holdT=null, voiceR=null, voiceOn=false;
+let gemKey='';
+let pollT=null;
+let hist=[];  // Gemini conversation
+let fpsT=null, fpsN=0, camOn=false;
+let rxBuf='';
+
+// ════════════════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════════════════
+function tab(n,el){
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('p-'+n).classList.add('on');
+  el.classList.add('on');
+}
+
+// ════════════════════════════════════════════════════════════
+//  ESP32-CAM
+// ════════════════════════════════════════════════════════════
+function connectCam(){
+  const ip=document.getElementById('camIp').value.trim();
+  if(!ip){toast('Enter ESP32-CAM IP');return;}
+  localStorage.setItem('vb_camip',ip);
+  const url='http://'+ip+'/stream';
+  const img=document.getElementById('camImg');
+  img.src=url;
+  img.onload=()=>{ camLoaded(ip); };
+  img.style.display='block';
+  document.getElementById('camPH').style.display='none';
+  document.getElementById('camBadge').className='cam-badge live';
+  document.getElementById('camBadge').textContent='LIVE';
+  document.getElementById('camInfo').textContent=ip+'/stream';
+  document.getElementById('camSt').textContent='ONLINE';
+  document.getElementById('camSt').className='sv ok';
+  document.getElementById('strSt').textContent='MJPEG';
+  document.getElementById('siCam').textContent='ON';
+  document.getElementById('siCam').className='sv ok';
+  camOn=true;
+  startFps();
+  log('Camera stream started: '+url,'ok');
+  toast('📷 Camera connecting...');
+}
+
+function camLoaded(ip){
+  log('Camera feed live from '+ip,'ok');
+  toast('📷 Camera live!');
+}
+
+function camError(){
+  document.getElementById('camBadge').className='cam-badge off';
+  document.getElementById('camBadge').textContent='ERROR';
+  document.getElementById('camSt').textContent='ERROR';
+  document.getElementById('camSt').className='sv warn';
+  log('Camera stream error — check IP and Wi-Fi','err');
+  toast('❌ Camera stream failed');
+  stopFps(); camOn=false;
+}
+
+function disconnectCam(){
+  const img=document.getElementById('camImg');
+  img.src=''; img.style.display='none';
+  document.getElementById('camPH').style.display='flex';
+  document.getElementById('camBadge').className='cam-badge off';
+  document.getElementById('camBadge').textContent='OFFLINE';
+  document.getElementById('camInfo').textContent='No signal';
+  document.getElementById('camSt').textContent='OFFLINE';
+  document.getElementById('camSt').className='sv';
+  document.getElementById('strSt').textContent='---';
+  document.getElementById('siCam').textContent='OFF';
+  document.getElementById('siCam').className='sv';
+  stopFps(); camOn=false;
+  log('Camera disconnected','lent');
+  toast('Camera stopped');
+}
+
+async function pingCam(){
+  const ip=document.getElementById('camIp').value.trim();
+  if(!ip){toast('Enter IP first');return;}
+  try{
+    const r=await fetch('http://'+ip+'/ping',{signal:AbortSignal.timeout(4000)});
+    const t=await r.text();
+    toast(t==='CAM_ONLINE'?'✅ ESP32-CAM online!':'⚠️ Unexpected: '+t);
+    log('Ping: '+t,'ok');
+  }catch(e){toast('❌ No response: '+e.message);log('Ping failed: '+e.message,'err');}
+}
+
+function snapshot(){
+  const ip=document.getElementById('camIp').value.trim();
+  if(!ip){toast('Connect camera first');return;}
+  const a=document.createElement('a');
+  a.href='http://'+ip+'/capture';
+  a.download='vocibot_'+Date.now()+'.jpg';
+  a.target='_blank'; a.click();
+  toast('📷 Saving snapshot...');
+}
+
+function startFps(){
+  stopFps(); fpsN=0;
+  // Count img natural size changes as a proxy for frame rate
+  fpsT=setInterval(()=>{
+    document.getElementById('fpsSt').textContent=fpsN+' fps';
+    fpsN=0;
+  },1000);
+}
+function stopFps(){if(fpsT){clearInterval(fpsT);fpsT=null;}}
+
+// Count frames via img decode (approximate)
+document.getElementById('camImg').addEventListener('load',()=>{if(camOn)fpsN++;});
+
+// ════════════════════════════════════════════════════════════
+//  BLUETOOTH
+// ════════════════════════════════════════════════════════════
+async function connBT(){
+  if(!navigator.bluetooth){toast('Use Chrome on Android');return;}
+  try{
+    btDev=await navigator.bluetooth.requestDevice({
+      filters:[{name:'HC-05'},{name:'VOCIBOT'},{namePrefix:'HC'}],
+      optionalServices:['0000ffe0-0000-1000-8000-00805f9b34fb']
+    });
+    const srv=await btDev.gatt.connect();
+    const svc=await srv.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+    btChar=await svc.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+    await btChar.startNotifications();
+    btChar.addEventListener('characteristicvaluechanged',onRx);
+    btOn=true; setConn(true,btDev.name||'HC-05');
+    log('BT connected to '+btDev.name,'ok');
+    toast('✅ Bluetooth connected!');
+    startPoll();
+    btDev.addEventListener('gattserverdisconnected',()=>{
+      btOn=false;btChar=null;setConn(false,'---');stopPoll();
+      log('BT disconnected','err');
+    });
+  }catch(e){log('BT error: '+e.message,'err');toast('❌ BT: '+e.message);}
+}
+
+function discBT(){
+  if(btDev?.gatt?.connected) btDev.gatt.disconnect();
+  btOn=false;btChar=null;setConn(false,'---');stopPoll();toast('Disconnected');
+}
+
+function onRx(e){
+  rxBuf+=new TextDecoder().decode(e.target.value);
+  const lines=rxBuf.split('\n');
+  rxBuf=lines.pop();
+  lines.forEach(l=>{l=l.trim();if(l) arduMsg(l);});
+}
+
+function arduMsg(m){
+  log('← '+m,'lent');
+  if(m.startsWith('SAY:')){
+    const t=m.substring(4);
+    showGresp(t); speak(t);
+    addBot(t,'◈ Arduino');
+  }
+  else if(m.startsWith('SENSOR:')){
+    const p=m.substring(7).split('|');
+    updSensor(p[0],p[1]==='BLOCKED',p[2]);
+  }
+  else if(m.startsWith('BLOCKED:')){
+    const d=m.substring(8);
+    updSensor(d,true,null);
+    document.getElementById('obs').classList.add('on');
+    setTimeout(()=>document.getElementById('obs').classList.remove('on'),3000);
+  }
+  else if(m.startsWith('DISTANCE:')){
+    updSensor(m.substring(9),parseInt(m.substring(9))<20,null);
+    toast('📏 '+m.substring(9)+' cm');
+  }
+  else if(m.startsWith('SPEED:')){
+    document.getElementById('siSpd').textContent=m.substring(6);
+  }
+  else if(m.startsWith('VOCIBOT_READY')){
+    toast('🤖 VOCIBOT online!');
+    addSys('✅ VOCIBOT connected and ready!');
+  }
+  else if(m.startsWith('SPEAKING:')){
+    // echo ack — app already spoke via TTS
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  SEND TO ARDUINO
+// ════════════════════════════════════════════════════════════
+async function send(cmd){
+  if(!btChar){toast('⚠️ Connect Bluetooth first');return;}
+  try{
+    await btChar.writeValue(new TextEncoder().encode(cmd+'\n'));
+    log('→ '+cmd,'lent');
+  }catch(e){log('Send err: '+e.message,'err');}
+}
+
+async function sendStr(s){
+  if(!btChar) return;
+  try{
+    const enc=new TextEncoder().encode(s+'\n');
+    for(let i=0;i<enc.length;i+=20){
+      await btChar.writeValue(enc.slice(i,i+20));
+      await new Promise(r=>setTimeout(r,25));
+    }
+  }catch(e){log('sendStr: '+e.message,'err');}
+}
+
+// ════════════════════════════════════════════════════════════
+//  DPAD
+// ════════════════════════════════════════════════════════════
+function hld(c){document.getElementById('b'+c)?.classList.add('pr');send(c);holdT=setInterval(()=>send(c),220);}
+function rel(){clearInterval(holdT);holdT=null;document.querySelectorAll('.db').forEach(b=>b.classList.remove('pr'));send('S');}
+function setSpd(c,l,el){send(c);document.querySelectorAll('.spd').forEach(b=>b.classList.remove('on'));el.classList.add('on');document.getElementById('siSpd').textContent=l;}
+
+// ════════════════════════════════════════════════════════════
+//  GREETINGS
+// ════════════════════════════════════════════════════════════
+function greet(c){send(c);showGresp('⏳ VOCIBOT responding...');}
+function showGresp(t){const el=document.getElementById('gresp');el.style.display='block';el.textContent='🔊 '+t.replace('⏳ ','');}
+
+// ════════════════════════════════════════════════════════════
+//  SENSOR POLL
+// ════════════════════════════════════════════════════════════
+function startPoll(){stopPoll();pollT=setInterval(()=>send('POLL'),2000);}
+function stopPoll(){if(pollT){clearInterval(pollT);pollT=null;}}
+function updSensor(d,blk,spd){
+  const de=document.getElementById('siDist'),pe=document.getElementById('siPath');
+  de.textContent=(d&&d!='999')?d+' cm':'-- cm';
+  de.className='sv'+(blk?' warn':'');
+  pe.textContent=blk?'BLOCKED':'CLEAR';
+  pe.className='sv'+(blk?' warn':' ok');
+  if(blk) document.getElementById('obs').classList.add('on');
+  else document.getElementById('obs').classList.remove('on');
+  if(spd) document.getElementById('siSpd').textContent=spd;
+}
+
+// ════════════════════════════════════════════════════════════
+//  VOICE — near-speaker mode
+//  Everything spoken close to the phone is captured,
+//  motion keywords go to Arduino, questions go to Gemini
+// ════════════════════════════════════════════════════════════
+function initVR(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('Voice needs Chrome');return false;}
+  voiceR=new SR();
+  voiceR.continuous=true; voiceR.interimResults=true; voiceR.lang='en-IN';
+  voiceR.onresult=e=>{
+    let f='',i='';
+    for(let j=e.resultIndex;j<e.results.length;j++){
+      if(e.results[j].isFinal) f+=e.results[j][0].transcript;
+      else i+=e.results[j][0].transcript;
+    }
+    document.getElementById('micTx').textContent=f||i;
+    if(f) handleVoice(f.trim().toLowerCase());
+  };
+  voiceR.onerror=e=>{log('Voice err:'+e.error,'err');micSt('Error: '+e.error);};
+  voiceR.onend=()=>{if(voiceOn) voiceR.start();};
+  return true;
+}
+
+function toggleVoice(){
+  if(!voiceR&&!initVR()) return;
+  const btn=document.getElementById('micBtn');
+  if(!voiceOn){
+    voiceR.start(); voiceOn=true;
+    btn.classList.add('on'); btn.textContent='⏹';
+    micSt('🔴 Listening — speak close to your phone');
+    log('Voice activated','ok');
+  }else{
+    voiceR.stop(); voiceOn=false;
+    btn.classList.remove('on'); btn.textContent='🎤';
+    micSt('Tap mic to start voice control');
+    log('Voice stopped','lent');
+  }
+}
+function micSt(t){document.getElementById('micSt').textContent=t;}
+
+function handleVoice(t){
+  log('Voice: "'+t+'"','ok');
+  document.getElementById('micTx').textContent='"'+t+'"';
+
+  // Motion
+  if(/\b(forward|move forward|go forward|go)\b/.test(t)){send('F');toast('▲ Forward');return;}
+  if(/\b(backward|back|reverse|go back)\b/.test(t)){send('B');toast('▼ Backward');return;}
+  if(/\b(left|turn left)\b/.test(t)){send('L');toast('◀ Left');return;}
+  if(/\b(right|turn right)\b/.test(t)){send('R');toast('▶ Right');return;}
+  if(/\b(stop|halt|freeze|brake)\b/.test(t)){send('S');toast('■ Stop');return;}
+
+  // Speed
+  if(/\bslow\b/.test(t)){send('1');toast('Speed: SLOW');return;}
+  if(/\b(medium|normal speed)\b/.test(t)){send('2');toast('Speed: MED');return;}
+  if(/\b(fast|speed up|full speed)\b/.test(t)){send('3');toast('Speed: FAST');return;}
+
+  // Greetings → Arduino replies SAY: → TTS speaks it
+  if(/good morning/.test(t)){greet('G');return;}
+  if(/good afternoon/.test(t)){greet('A');return;}
+  if(/good evening/.test(t)){greet('E');return;}
+  if(/good night/.test(t)){greet('K');return;}
+  if(/\b(hello|hi|hey)\b/.test(t)){greet('H');return;}
+  if(/your name|who are you|what.*name/.test(t)){greet('N');return;}
+  if(/introduce/.test(t)){greet('I');return;}
+  if(/how are you/.test(t)){greet('W');return;}
+  if(/thank/.test(t)){greet('T');return;}
+  if(/distance|obstacle|sensor/.test(t)){send('D');return;}
+
+  // Everything else → Gemini AI → answer spoken aloud
+  if(t.length>4){
+    tab('ai',document.querySelectorAll('.tab')[3]);
+    addUser(t); callGemini(t);
+  }
+}
+
+function v2ai(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('Use Chrome');return;}
+  const sr=new SR();sr.lang='en-IN';
+  sr.onresult=e=>{const t=e.results[0][0].transcript;document.getElementById('cin').value=t;sendAI();};
+  sr.start();toast('🎤 Speak your question...');
+}
+
+// ════════════════════════════════════════════════════════════
+//  GEMINI AI — called directly from browser
+// ════════════════════════════════════════════════════════════
+const SYS_PROMPT=
+  "You are VOCIBOT, a voice-controlled AI robot built by engineering students "+
+  "Reshma Satpute, Vedant Pathrabe, Raksha Sonewane, Lavanya Gabhane, and Mahak Gupta, "+
+  "guided by Dr J.Y. Hande at Priyadarshini Bhagwati College of Engineering, Nagpur, India. "+
+  "Your hardware: Arduino Uno, HC-05 Bluetooth, L293D motor driver, HC-SR04 ultrasonic, "+
+  "ESP32-CAM for live video, and buzzer. Your AI brain is Google Gemini 1.5 Flash called "+
+  "directly from the mobile browser — no ESP32 needed for AI. "+
+  "Be friendly, enthusiastic, concise (2-3 sentences max) because your answers are spoken aloud via phone speaker. "+
+  "Greet people warmly as VOCIBOT. When asked about creators or college, mention everyone by name.";
+
+function qa(q){addUser(q);callGemini(q);}
+function sendAI(){const el=document.getElementById('cin'),q=el.value.trim();if(!q)return;el.value='';el.style.height='auto';addUser(q);callGemini(q);}
+
+async function callGemini(q){
+  if(!gemKey){const a=localAns(q);addBot(a,'◈ Local (add key)');speak(a);return;}
+  const typing=addTyping();
+  const msgs=[
+    {role:'user',parts:[{text:SYS_PROMPT}]},
+    {role:'model',parts:[{text:'Understood! I am VOCIBOT, ready to assist!'}]},
+    ...hist.slice(-8),
+    {role:'user',parts:[{text:q}]}
+  ];
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+gemKey,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:msgs,generationConfig:{maxOutputTokens:200,temperature:0.75}}),
+      signal:AbortSignal.timeout(18000)
+    });
+    typing.remove();
+    if(!r.ok){const e=await r.json();addBot('Gemini error: '+(e.error?.message||r.status),'❌');return;}
+    const data=await r.json();
+    const ans=(data.candidates?.[0]?.content?.parts?.[0]?.text||'No response').trim();
+    addBot(ans,'✦ Gemini');
+    speak(ans);
+    log('Gemini: '+ans.substring(0,70)+'...','lai');
+    hist.push({role:'user',parts:[{text:q}]},{role:'model',parts:[{text:ans}]});
+    if(hist.length>20) hist=hist.slice(-20);
+    // Tell Arduino to beep (answer being spoken)
+    sendStr('SPEAK:'+ans.substring(0,80));
+  }catch(e){
+    typing.remove();
+    const msg=e.name==='TimeoutError'?'Gemini timed out!':'Error: '+e.message;
+    addBot(msg,'❌'); log('Gemini: '+e.message,'err');
+  }
+}
+
+function localAns(q){
+  q=q.toLowerCase();
+  if(/name|who are you/.test(q)) return "I am VOCIBOT — Voice Controlled Intelligent Bot! Built at Priyadarshini Bhagwati College of Engineering, Nagpur.";
+  if(/\b(hello|hi)\b/.test(q)) return "Hello! I am VOCIBOT, your AI-powered voice-controlled robot!";
+  if(/good morning/.test(q)) return "Good morning! VOCIBOT fully charged and ready!";
+  if(/how are you/.test(q)) return "All systems nominal! Motors, sensors, camera, and AI all running!";
+  if(/creator|who made|who built/.test(q)) return "Built by Reshma Satpute, Vedant Pathrabe, Raksha Sonewane, Lavanya Gabhane, and Mahak Gupta, guided by Dr J.Y. Hande!";
+  if(/what can you do|capabilities/.test(q)) return "I navigate with voice commands, detect obstacles, stream live video with ESP32-CAM, and answer questions with Gemini AI!";
+  if(/esp32|camera/.test(q)) return "The ESP32-CAM streams live MJPEG video directly to the app browser. It runs on its own Wi-Fi, completely independent of the Arduino!";
+  if(/arduino/.test(q)) return "Arduino Uno is my motor brain! It controls the L293D motor driver and communicates over HC-05 Bluetooth.";
+  if(/gemini|ai/.test(q)) return "My AI is Google Gemini 1.5 Flash, called directly from the mobile browser. No extra hardware needed!";
+  if(/guide|teacher/.test(q)) return "My faculty guide is Dr J.Y. Hande, Electronics & Telecommunication Engineering, Priyadarshini Bhagwati COE, Nagpur!";
+  return "Add your free Gemini API key in ⚙️ Setup for full AI answers!";
+}
+
+// ════════════════════════════════════════════════════════════
+//  TEXT TO SPEECH
+// ════════════════════════════════════════════════════════════
+function speak(text){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='en-IN';u.rate=0.92;u.pitch=1.05;
+  window.speechSynthesis.speak(u);
+}
+
+// ════════════════════════════════════════════════════════════
+//  CHAT UI
+// ════════════════════════════════════════════════════════════
+function addUser(t){
+  const b=document.getElementById('chatbox'),d=document.createElement('div');
+  d.className='msg mu';d.textContent=t;b.appendChild(d);b.scrollTop=b.scrollHeight;
+}
+function addBot(t,src='◈ Local'){
+  const b=document.getElementById('chatbox'),d=document.createElement('div');
+  d.className='msg mb';
+  d.innerHTML='<div class="lbl">⬡ VOCIBOT <span style="color:var(--dim);font-size:.55rem">'+esc(src)+'</span></div>'+esc(t);
+  b.appendChild(d);b.scrollTop=b.scrollHeight;
+}
+function addSys(t){
+  const b=document.getElementById('chatbox'),d=document.createElement('div');
+  d.className='msg msys';d.textContent=t;b.appendChild(d);b.scrollTop=b.scrollHeight;
+}
+function addTyping(){
+  const b=document.getElementById('chatbox'),d=document.createElement('div');
+  d.className='tdots';d.innerHTML='<div class="td"></div><div class="td"></div><div class="td"></div>';
+  b.appendChild(d);b.scrollTop=b.scrollHeight;return d;
+}
+function clrChat(){document.getElementById('chatbox').innerHTML='<div class="msg msys">Chat cleared.</div>';hist=[];}
+
+// ════════════════════════════════════════════════════════════
+//  GEMINI KEY
+// ════════════════════════════════════════════════════════════
+function saveKey(){
+  const k=document.getElementById('keyIn').value.trim();
+  if(!k){toast('Enter key first');return;}
+  gemKey=k;localStorage.setItem('vb_key',k);
+  document.getElementById('keySt').textContent='✅ Key saved ('+k.substring(0,8)+'...)';
+  toast('✅ Gemini key saved!');
+  addSys('✅ Gemini AI enabled!');
+}
+
+// ════════════════════════════════════════════════════════════
+//  CONNECTION UI
+// ════════════════════════════════════════════════════════════
+function setConn(on,name){
+  document.getElementById('dot').className='dot'+(on?' on':'');
+  document.getElementById('connLbl').textContent=on?'CONNECTED':'DISCONNECTED';
+  document.getElementById('btLbl').textContent='HC-05: '+(on?name:'---');
+  document.getElementById('siBt').textContent=on?'ON':'OFF';
+  document.getElementById('siBt').className='sv'+(on?' ok':'');
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOG
+// ════════════════════════════════════════════════════════════
+function log(m,c='lent'){
+  const b=document.getElementById('logbox');
+  const ts=new Date().toLocaleTimeString('en-IN',{hour12:false});
+  b.innerHTML+='<span class="'+c+'">['+ts+'] '+esc(m)+'</span><br>';
+  b.scrollTop=b.scrollHeight;
+  const ln=b.innerHTML.split('<br>');
+  if(ln.length>70) b.innerHTML=ln.slice(-60).join('<br>');
+}
+
+// ════════════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════════════
+let toastT;
+function toast(m){
+  const el=document.getElementById('toast');el.textContent=m;el.classList.add('on');
+  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),2600);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  const k=localStorage.getItem('vb_key');
+  if(k){gemKey=k;document.getElementById('keyIn').value=k;document.getElementById('keySt').textContent='✅ Key loaded ('+k.substring(0,8)+'...)';}
+  const ci=localStorage.getItem('vb_camip');
+  if(ci) document.getElementById('camIp').value=ci;
+  log('VOCIBOT v2.0 app loaded','ok');
+  log('Priyadarshini Bhagwati COE, Nagpur','lai');
+});
+document.getElementById('keyIn').addEventListener('change',e=>localStorage.setItem('vb_key',e.target.value));
+document.getElementById('camIp').addEventListener('change',e=>localStorage.setItem('vb_camip',e.target.value));
+</script>
+</body>
+</html>
